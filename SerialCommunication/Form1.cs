@@ -40,6 +40,7 @@ namespace SerialCommunication
                 this.checkBoxDigital2.CheckedChanged += new System.EventHandler(this.checkBoxDigital2_CheckedChanged);
                 this.checkBoxDigital3.CheckedChanged += new System.EventHandler(this.checkBoxDigital3_CheckedChanged);
                 this.checkBoxDigital4.CheckedChanged += new System.EventHandler(this.checkBoxDigital4_CheckedChanged);
+                this.trackBarPWM9.Scroll += new System.EventHandler(this.trackBarPWM9_Scroll);
             }
             catch (Exception)
             { }
@@ -94,6 +95,67 @@ namespace SerialCommunication
                 }
 
                 string cmd = checkBoxDigital4.Checked ? "set d4 high" : "set d4 low";
+                serialPortArduino.WriteLine(cmd);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout bij verzenden: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void trackBarPWM9_Scroll(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    MessageBox.Show("Geen open seriële verbinding.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                string cmd = $"set pwm9 {trackBarPWM9.Value}";
+                serialPortArduino.WriteLine(cmd);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout bij verzenden: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void checkBoxDigital10_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    MessageBox.Show("Geen open seriële verbinding.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var cb = sender as CheckBox;
+                if (cb == null) return;
+                string cmd = cb.Checked ? "set d10 high" : "set d10 low";
+                serialPortArduino.WriteLine(cmd);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout bij verzenden: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void checkBoxDigital11_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    MessageBox.Show("Geen open seriële verbinding.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var cb = sender as CheckBox;
+                if (cb == null) return;
+                string cmd = cb.Checked ? "set d11 high" : "set d11 low";
                 serialPortArduino.WriteLine(cmd);
             }
             catch (Exception ex)
