@@ -17,6 +17,7 @@ namespace SerialCommunication
         private SerialPort serialPortArduino;
         private System.Windows.Forms.Timer timerOefening3;
         private System.Windows.Forms.Timer timerOefening4;
+        private System.Windows.Forms.Timer timerOefening5;
 
         public Form1()
         {
@@ -51,6 +52,10 @@ namespace SerialCommunication
                 timerOefening4 = new System.Windows.Forms.Timer();
                 timerOefening4.Interval = 1000;
                 timerOefening4.Tick += new System.EventHandler(this.timerOefening4_Tick);
+                // timer for oefening5
+                timerOefening5 = new System.Windows.Forms.Timer();
+                timerOefening5.Interval = 1000;
+                timerOefening5.Tick += new System.EventHandler(this.timerOefening5_Tick);
 
                 // tab control change to enable/disable timers
                 this.tabControl.SelectedIndexChanged += new System.EventHandler(this.tabControl_SelectedIndexChanged);
@@ -231,6 +236,11 @@ namespace SerialCommunication
                     timerOefening4.Enabled = true;
                 else
                     timerOefening4.Enabled = false;
+
+                if (tabControl.SelectedTab == tabPageOefening5)
+                    timerOefening5.Enabled = true;
+                else
+                    timerOefening5.Enabled = false;
             }
             catch (Exception)
             { }
@@ -330,6 +340,66 @@ namespace SerialCommunication
             catch (Exception ex)
             {
                 MessageBox.Show("Fout tijdens analog-read: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void timerOefening5_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    return;
+                }
+
+                // clear any pending data
+                try { var _ = serialPortArduino.ReadExisting(); } catch { }
+
+                // Desired temperature from analog 0: map 0..1023 -> 5..45°C
+                serialPortArduino.WriteLine("get a0");
+                string resp0 = serialPortArduino.ReadLine().Trim();
+                string s0 = resp0;
+                if (resp0.Contains(":")) s0 = resp0.Split(':').Last().Trim();
+                else if (resp0.Contains(" ")) s0 = resp0.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Last();
+
+                if (!int.TryParse(s0, out int raw0))
+                    return;
+
+                double mDesired = 40.0 / 1023.0; // slope
+                double bDesired = 5.0; // offset
+                double desiredTemp = mDesired * raw0 + bDesired;
+                desiredTemp = Math.Round(desiredTemp, 1);
+                labelGewensteTemp.Text = desiredTemp.ToString("0.0") + " °C";
+
+                // Current temperature from analog 1: map 0..1023 -> 0..500°C
+                serialPortArduino.WriteLine("get a1");
+                string resp1 = serialPortArduino.ReadLine().Trim();
+                string s1 = resp1;
+                if (resp1.Contains(":")) s1 = resp1.Split(':').Last().Trim();
+                else if (resp1.Contains(" ")) s1 = resp1.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Last();
+
+                if (!int.TryParse(s1, out int raw1))
+                    return;
+
+                double mCurrent = 500.0 / 1023.0;
+                double bCurrent = 0.0;
+                double currentTemp = mCurrent * raw1 + bCurrent;
+                currentTemp = Math.Round(currentTemp, 1);
+                labelHuidigeTemp.Text = currentTemp.ToString("0.0") + " °C";
+
+                // LED control on digital pin 2: on when current < desired
+                if (currentTemp < desiredTemp)
+                    serialPortArduino.WriteLine("set d2 high");
+                else
+                    serialPortArduino.WriteLine("set d2 low");
+            }
+            catch (TimeoutException)
+            {
+                // ignore timeouts
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout tijdens temperatuurupdate: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
