@@ -15,6 +15,7 @@ namespace SerialCommunication
     public partial class Form1 : Form
     {
         private SerialPort serialPortArduino;
+        private System.Windows.Forms.Timer timerOefening3;
 
         public Form1()
         {
@@ -41,6 +42,13 @@ namespace SerialCommunication
                 this.checkBoxDigital3.CheckedChanged += new System.EventHandler(this.checkBoxDigital3_CheckedChanged);
                 this.checkBoxDigital4.CheckedChanged += new System.EventHandler(this.checkBoxDigital4_CheckedChanged);
                 this.trackBarPWM9.Scroll += new System.EventHandler(this.trackBarPWM9_Scroll);
+                // timer for oefening3
+                timerOefening3 = new System.Windows.Forms.Timer();
+                timerOefening3.Interval = 1000;
+                timerOefening3.Tick += new System.EventHandler(this.timerOefening3_Tick);
+
+                // tab control change to enable/disable timer
+                this.tabControl.SelectedIndexChanged += new System.EventHandler(this.tabControl_SelectedIndexChanged);
                 this.trackBarPWM10.Scroll += new System.EventHandler(this.trackBarPWM10_Scroll);
                 this.trackBarPWM11.Scroll += new System.EventHandler(this.trackBarPWM11_Scroll);
             }
@@ -204,6 +212,20 @@ namespace SerialCommunication
             }
         }
 
+        private void tabControl_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // enable timer only when oefening3 tab is selected
+            try
+            {
+                if (tabControl.SelectedTab == tabPageOefening3)
+                    timerOefening3.Enabled = true;
+                else
+                    timerOefening3.Enabled = false;
+            }
+            catch (Exception)
+            { }
+        }
+
         private void cboPoort_DropDown(object sender, EventArgs e)
         {
             try
@@ -219,6 +241,54 @@ namespace SerialCommunication
             catch (Exception)
             {
                 if (comboBoxPoort.Items.Count > 0) comboBoxPoort.SelectedIndex = 0;
+            }
+        }
+
+        private void timerOefening3_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    // nothing to do if not connected
+                    return;
+                }
+
+                // clear any pending data
+                try { var _ = serialPortArduino.ReadExisting(); } catch { }
+
+                // digital5
+                serialPortArduino.WriteLine("get d5");
+                string resp5 = serialPortArduino.ReadLine().Trim();
+                string val5 = resp5;
+                if (resp5.Contains(":")) val5 = resp5.Split(':').Last().Trim();
+                else if (resp5.Contains(" ")) val5 = resp5.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Last();
+                radioButtonDigital5.Checked = (val5 == "1");
+
+                // digital6
+                serialPortArduino.WriteLine("get d6");
+                string resp6 = serialPortArduino.ReadLine().Trim();
+                string val6 = resp6;
+                if (resp6.Contains(":")) val6 = resp6.Split(':').Last().Trim();
+                else if (resp6.Contains(" ")) val6 = resp6.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Last();
+                radioButtonDigital6.Checked = (val6 == "1");
+
+                // digital7
+                serialPortArduino.WriteLine("get d7");
+                string resp7 = serialPortArduino.ReadLine().Trim();
+                string val7 = resp7;
+                if (resp7.Contains(":")) val7 = resp7.Split(':').Last().Trim();
+                else if (resp7.Contains(" ")) val7 = resp7.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Last();
+                radioButtonDigital7.Checked = (val7 == "1");
+            }
+            catch (TimeoutException)
+            {
+                // ignore timeouts silently
+            }
+            catch (Exception ex)
+            {
+                // show other errors
+                MessageBox.Show("Fout tijdens statuspolling: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
