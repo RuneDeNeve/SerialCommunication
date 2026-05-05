@@ -16,6 +16,7 @@ namespace SerialCommunication
     {
         private SerialPort serialPortArduino;
         private System.Windows.Forms.Timer timerOefening3;
+        private System.Windows.Forms.Timer timerOefening4;
 
         public Form1()
         {
@@ -46,8 +47,12 @@ namespace SerialCommunication
                 timerOefening3 = new System.Windows.Forms.Timer();
                 timerOefening3.Interval = 1000;
                 timerOefening3.Tick += new System.EventHandler(this.timerOefening3_Tick);
+                // timer for oefening4
+                timerOefening4 = new System.Windows.Forms.Timer();
+                timerOefening4.Interval = 1000;
+                timerOefening4.Tick += new System.EventHandler(this.timerOefening4_Tick);
 
-                // tab control change to enable/disable timer
+                // tab control change to enable/disable timers
                 this.tabControl.SelectedIndexChanged += new System.EventHandler(this.tabControl_SelectedIndexChanged);
                 this.trackBarPWM10.Scroll += new System.EventHandler(this.trackBarPWM10_Scroll);
                 this.trackBarPWM11.Scroll += new System.EventHandler(this.trackBarPWM11_Scroll);
@@ -214,13 +219,18 @@ namespace SerialCommunication
 
         private void tabControl_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // enable timer only when oefening3 tab is selected
+            // enable/disable timers based on selected tab
             try
             {
                 if (tabControl.SelectedTab == tabPageOefening3)
                     timerOefening3.Enabled = true;
                 else
                     timerOefening3.Enabled = false;
+
+                if (tabControl.SelectedTab == tabPageOefening4)
+                    timerOefening4.Enabled = true;
+                else
+                    timerOefening4.Enabled = false;
             }
             catch (Exception)
             { }
@@ -289,6 +299,37 @@ namespace SerialCommunication
             {
                 // show other errors
                 MessageBox.Show("Fout tijdens statuspolling: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void timerOefening4_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    return;
+                }
+
+                // clear any pending data
+                try { var _ = serialPortArduino.ReadExisting(); } catch { }
+
+                // request analog0
+                serialPortArduino.WriteLine("get a0");
+                string resp = serialPortArduino.ReadLine().Trim();
+                string val = resp;
+                if (resp.Contains(":")) val = resp.Split(':').Last().Trim();
+                else if (resp.Contains(" ")) val = resp.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Last();
+
+                labelAnalog0.Text = val;
+            }
+            catch (TimeoutException)
+            {
+                // ignore timeouts
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout tijdens analog-read: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
