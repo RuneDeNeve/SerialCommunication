@@ -41,6 +41,8 @@ namespace SerialCommunication
                 this.checkBoxDigital3.CheckedChanged += new System.EventHandler(this.checkBoxDigital3_CheckedChanged);
                 this.checkBoxDigital4.CheckedChanged += new System.EventHandler(this.checkBoxDigital4_CheckedChanged);
                 this.trackBarPWM9.Scroll += new System.EventHandler(this.trackBarPWM9_Scroll);
+                this.trackBarPWM10.Scroll += new System.EventHandler(this.trackBarPWM10_Scroll);
+                this.trackBarPWM11.Scroll += new System.EventHandler(this.trackBarPWM11_Scroll);
             }
             catch (Exception)
             { }
@@ -114,6 +116,44 @@ namespace SerialCommunication
                 }
 
                 string cmd = $"set pwm9 {trackBarPWM9.Value}";
+                serialPortArduino.WriteLine(cmd);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout bij verzenden: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void trackBarPWM10_Scroll(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    MessageBox.Show("Geen open seriële verbinding.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                string cmd = $"set pwm10 {trackBarPWM10.Value}";
+                serialPortArduino.WriteLine(cmd);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Fout bij verzenden: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void trackBarPWM11_Scroll(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino == null || !serialPortArduino.IsOpen)
+                {
+                    MessageBox.Show("Geen open seriële verbinding.", "Info", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                string cmd = $"set pwm11 {trackBarPWM11.Value}";
                 serialPortArduino.WriteLine(cmd);
             }
             catch (Exception ex)
